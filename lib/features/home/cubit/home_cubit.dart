@@ -6,18 +6,39 @@ import 'package:meta/meta.dart';
 
 part 'home_state.dart';
 
+
 class HomeCubit extends Cubit<HomeState> {
   final HomeServices homeServices;
+
   HomeCubit(this.homeServices) : super(HomeInitial());
 
-  void loadHomeData() async{
-    try{
-      final categories =  await homeServices.getCategories();
-      emit(CategoriesSuccess(categories));
-      final products = await homeServices.getProducts(categories[0].id);
-      emit(ProductsSuccess(products));
-    } catch(e){
+  List<CategoryModel> categoriesData = [];
+  List<ProductModel> productsData = [];
+
+  Future<void> loadHomeData() async {
+    emit(CategoriesLoading());
+
+    try {
+      categoriesData = await homeServices.getCategories();
+      emit(CategoriesSuccess(categoriesData));
+
+      if (categoriesData.isNotEmpty) {
+        await getCategoryProducts(categoriesData.first.id!);
+      }
+    } catch (e) {
       emit(CategoriesError(e.toString()));
     }
   }
+
+  Future<void> getCategoryProducts(int categoryId) async {
+    emit(ProductsLoading());
+
+    try {
+      productsData = await homeServices.getProducts(categoryId);
+      emit(ProductsSuccess(productsData));
+    } catch (e) {
+      emit(ProductsError(e.toString()));
+    }
+  }
 }
+

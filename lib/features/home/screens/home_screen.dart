@@ -158,6 +158,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     setState(() {
                                       _selectedCategoryIndex = index;
                                     });
+
+                                    context.read<HomeCubit>().getCategoryProducts(category.id!);
                                   },
                                 );
                               },
@@ -173,20 +175,64 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return ProductCard(product: dummyProducts[index]);
-                }, childCount: dummyProducts.length),
-              ),
+
+            BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, state) {
+                if (state is ProductsLoading) {
+                  return const SliverToBoxAdapter(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (state is ProductsError) {
+                  return SliverToBoxAdapter(
+                    child: Center(
+                      child: Text(state.errorMessage),
+                    ),
+                  );
+                }
+
+                if (state is ProductsSuccess) {
+                  final products = state.productsData;
+
+                  if (products.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: Center(
+                        child: Text('No products found'),
+                      ),
+                    );
+                  }
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.7,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          return ProductCard(
+                            product: products[index],
+                          );
+                        },
+                        childCount: products.length,
+                      ),
+                    ),
+                  );
+                }
+
+                return const SliverToBoxAdapter(
+                  child: SizedBox.shrink(),
+                );
+              },
             ),
+
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
